@@ -1,3 +1,6 @@
+// Scrapes keine-exchange.com and pushes rates to keine.appify.kz
+// Run via GitHub Actions every 5 minutes
+
 const PUSH_URL = 'https://keine.appify.kz/api/rates_receive.php';
 const PUSH_KEY = process.env.PUSH_KEY;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -94,12 +97,14 @@ async function fetchSlug(slug) {
 
 async function main() {
   if (!PUSH_KEY) { console.error('PUSH_KEY not set'); process.exit(1); }
+
   console.log(`Fetching ${SLUGS.length} slugs...`);
   const rows = await Promise.all(SLUGS.map(fetchSlug));
   const ok  = rows.filter(r => !r.error).length;
   const bad = rows.filter(r => r.error);
   console.log(`OK: ${ok}/${rows.length}`);
   if (bad.length) bad.forEach(r => console.log(`  FAIL: ${r.url} — ${r.error}`));
+
   const payload = JSON.stringify({ rows, generated: new Date().toISOString(), cached: false });
   const resp = await fetch(PUSH_URL, {
     method: 'POST',
